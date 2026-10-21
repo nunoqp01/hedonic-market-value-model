@@ -1,0 +1,19 @@
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Excel temporary lock files
+~$*
+
+# Raw and processed data (sources have their own terms of use)
+data/raw/
+data/processed/
+
+# Local databases built from the data
+*.db
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
