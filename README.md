@@ -26,9 +26,26 @@ The data are not included. They combine FBref, FootyStats and Transfermarkt, the
 
 ## How to run
 
-Requires Python 3.14. Currently uses pandas, numpy and openpyxl (see `requirements.txt`). statsmodels and scikit-learn are installed for the models still to come.
+Requires Python 3.14. Currently uses pandas, numpy and openpyxl (see `requirements.txt`). statsmodels and scikit-learn will be added when the models are implemented.
 
-[PREENCHER: commands to set up the environment and run the loading and features modules, with the real output]
+Tested on Windows (PowerShell) in a fresh clone, with the data file placed at `data/raw/Base.xlsx`:
+
+```
+py -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+python src/check_features.py
+```
+
+The last command prints the table size and the first three rows of the derived variables:
+
+```
+(3373, 33)
+       ln_mv      age_sq  ln_fees_cum  Winger  player_id
+0  13.527828  394.794823     0.000000       1          0
+1  16.454568  542.760563     1.504077       1          1
+2  15.894952  715.562500     2.332144       0          2
+```
 
 ## Dissertation
 
