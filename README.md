@@ -49,4 +49,4 @@ The last command prints the table size and the first three rows of the derived v
 
 ## Dissertation
 
-"Financial Sustainability and Player Trading in European Football" (MSc dissertation, University of Aveiro, 2026). Not public: it is being adapted into two academic articles. A short write-up of the results: [https://www.linkedin.com/feed/update/urn:li:activity:7518582515645726721/].
+"Financial Sustainability and Player Trading in European Football" (MSc dissertation, University of Aveiro, 2026). Not public: it is being adapted into two academic articles. A short write-up of the results: [LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7518582515645726721/).
