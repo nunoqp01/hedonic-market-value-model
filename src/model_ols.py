@@ -172,3 +172,23 @@ print("Overvalued (Stata-style seasons):", over_stata.sum())
 # How many players are flagged by both versions? "&" means "and".
 both = (df["undervalued_base"] == 1) & under_stata
 print("Flagged undervalued in both versions:", both.sum())
+# ---------------------------------------------------------------------
+# Export the list of undervalued players
+# ---------------------------------------------------------------------
+# Stata: export excel name club league season tm_mv mv_predicted resid_base
+#        using "subavaliados_base.xlsx" if undervalued_base == 1, firstrow(variables)
+# We use season_harmonized here, which has the correct season for every row.
+columns = ["name", "club", "league", "season_harmonized",
+           "tm_mv", "mv_predicted", "resid_base"]
+
+# df.loc[condition, columns] keeps only the rows that meet the condition
+# and only the columns we list. sort_values puts the most negative
+# residuals (the most undervalued) first.
+undervalued = df.loc[df["undervalued_base"] == 1, columns].sort_values("resid_base")
+
+# index=False leaves out the row numbers. This file stays in outputs/,
+# which is in .gitignore, because it lists players from the data.
+undervalued.to_excel(OUTPUT_DIR / "undervalued_base.xlsx", index=False)
+
+# A first look at the ten most undervalued rows.
+print(undervalued.head(10).round(2))
