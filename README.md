@@ -40,7 +40,7 @@ python src/check_features.py
 The last command prints the table size and the first three rows of the derived variables:
 
 ```
-(3373, 33)
+(3373, 47)
        ln_mv      age_sq  ln_fees_cum  Winger  player_id
 0  13.527828  394.794823     0.000000       1          0
 1  16.454568  542.760563     1.504077       1          1
