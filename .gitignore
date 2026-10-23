@@ -17,3 +17,6 @@ data/processed/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+
+# Script outputs (may contain player-level results derived from the data)
+outputs/
