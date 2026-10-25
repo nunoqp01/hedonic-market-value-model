@@ -12,9 +12,11 @@ Methods:
                            for the test season (a forest cannot extrapolate market inflation by itself)
 
 All preprocessing lives inside a scikit-learn Pipeline, so it is fitted on training data only.
-Metrics are reported in log scale and in euros, on all test rows, on returning players, and on
-new players (no previous value), where only the OLS and forest methods apply.
-Random forest hyperparameters are untuned defaults (first pass).
+Random forest hyperparameters are chosen inside each training window with player-grouped
+cross-validation (GroupKFold), so the same player never sits in both the training and validation
+folds and the test season is never used for tuning.
+Metrics are reported in log scale and in euros, on all test rows, on European leagues only,
+on returning players, and on new players (no previous value).
 """
 
 from pathlib import Path
@@ -24,6 +26,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.pipeline import Pipeline
 from load_data import load_data
 from features import add_features
@@ -61,6 +64,20 @@ def make_forest():
     ])
 
 
+def tune_forest(train, target):
+    """Choose forest hyperparameters with player-grouped CV, using the training window only.
+
+    `target` is passed in because the RF + trend variant trains on a detrended ln value.
+    """
+    grid = {"forest__min_samples_leaf": [1, 2, 3, 5],
+            "forest__max_features": [0.1, 0.2, 0.3, 0.5]}
+    search = GridSearchCV(make_forest(), grid,
+                          cv=GroupKFold(n_splits=5),                   # same player never in train and validation
+                          scoring="neg_root_mean_squared_error")       # higher is better, so it is minus the RMSE
+    search.fit(train[FEATURES], target, groups=train["player_id"])
+    return search  # already refitted on the whole training window with the best combination
+
+
 def metrics(y, pred):
     """Errors in log and in euros. Positive bias = the method predicts too low."""
     err = y - pred
@@ -85,9 +102,10 @@ PRED_COLUMNS = {"previous value": "pred_prev",
 
 
 def evaluate(test, label):
-    """Metrics for each method on all rows, returning players and new players."""
+    """Metrics for each method on all rows, European leagues, returning players and new players."""
     rows = []
     subsets = {"all test rows": pd.Series(True, index=test.index),
+               "European leagues only": (test["d_argentina"] + test["d_brasileirao"]) == 0,
                "returning players": test["pred_prev"].notna(),
                "new players": test["pred_prev"].isna()}
     for subset, mask in subsets.items():
@@ -118,14 +136,16 @@ for t in range(FIRST_TEST, LAST_SEASON + 1):
     ols_trend = smf.ols(FORMULA_TREND, data=train).fit()
     test["pred_trend"] = ols_trend.predict(test)
 
-    # Random forest on ln value
-    forest = make_forest().fit(train[FEATURES], train["ln_mv"])
-    test["pred_rf"] = forest.predict(test[FEATURES])
+    # Random forest on ln value, hyperparameters tuned inside the training window
+    search = tune_forest(train, train["ln_mv"])
+    test["pred_rf"] = search.predict(test[FEATURES])
+    print(f"season {t} RF best params:", search.best_params_)
 
     # Random forest on ln value minus the time trend; add the trend back for season t
     b = ols_trend.params["season_num"]  # estimated growth per season, controlling for the features
-    forest_t = make_forest().fit(train[FEATURES], train["ln_mv"] - b * train["season_num"])
-    test["pred_rf_trend"] = forest_t.predict(test[FEATURES]) + b * t
+    search_t = tune_forest(train, train["ln_mv"] - b * train["season_num"])
+    test["pred_rf_trend"] = search_t.predict(test[FEATURES]) + b * t
+    print(f"season {t} RF + trend best params:", search_t.best_params_)
 
     all_rows += evaluate(test, f"season {t}")
     test_frames.append(test)
@@ -136,6 +156,10 @@ all_rows += evaluate(pooled, "pooled 3-5")
 table = pd.DataFrame(all_rows).set_index(["test", "subset", "method"])
 pd.set_option("display.width", 200)
 print(table.loc["pooled 3-5"].round(3).to_string())  # per-season detail is in the CSV
+
+# Per-season RF on European leagues only (compare with Table 34 of the thesis)
+eu = table.xs("European leagues only", level="subset")
+print(eu.loc[eu.index.get_level_values("method") == "RF"].round(3).to_string())
 
 Path("outputs").mkdir(exist_ok=True)
 table.to_csv("outputs/expanding_window_metrics.csv")
