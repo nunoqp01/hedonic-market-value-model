@@ -165,5 +165,6 @@ Path("outputs").mkdir(exist_ok=True)
 table.to_csv("outputs/expanding_window_metrics.csv")
 
 # Out-of-time predictions per player-season, for residual analysis later
-id_cols = [c for c in ["player_id", "name", "club", "season_clean", "season_num", "position"] if c in pooled.columns]
+id_cols = [c for c in ["player_id", "name", "club", "season_clean", "season_num", "position",
+                       "d_argentina", "d_brasileirao"] if c in pooled.columns]
 pooled[id_cols + ["ln_mv"] + list(PRED_COLUMNS.values())].to_csv("outputs/expanding_window_predictions.csv", index=False)
