@@ -14,12 +14,17 @@ NON_FORWARD_IDS = {
 }
 
 
-def apply_filters(df, min_minutes=450):
-    """Sample filters of the thesis. min_minutes is a parameter so it can be varied."""
+def apply_filters(df, min_minutes=450, max_season_num=5):
+    """Sample filters. min_minutes and max_season_num are parameters so they can be varied.
+
+    max_season_num = 5 keeps 2020/21 to 2024/25. Season 6 (2025/26) has only Brazil and
+    Argentina so far, which would make a season-6 dummy collinear with the league dummies.
+    """
     df = df.dropna(subset=["tm_mv"])
     df = df[df["tm_mv"] > 0]
     df = df[df["age"] < 28]
     df = df[df["minutes"] >= min_minutes]
+    df = df[df["season_num"] <= max_season_num]
     if EXCLUDE_NON_FORWARDS:
         df = df[~df["player_id"].isin(NON_FORWARD_IDS)]
     return df
