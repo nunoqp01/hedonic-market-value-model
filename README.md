@@ -1,24 +1,48 @@
-# Hedonic pricing model for player market values (Python)
+# Hedonic model of forward market values: Stata to Python, and out-of-time validation
 
-**Work in progress.** A Python replication of a model first built in Stata. No model has been estimated in Python yet.
+A Python replication of the hedonic market-value model from my master's dissertation (University of Aveiro, 2026), originally built in Stata, extended with an out-of-time validation that the dissertation left as future work.
 
-## Objective
+## What this project does
 
-This repository replicates in Python the hedonic market-value model from my master's dissertation (University of Aveiro, 2026), originally built in Stata. The model covers forwards (centre-forwards and wingers), with the log of the last Transfermarkt market value of the season as the dependent variable. The dissertation estimates OLS and random forest models and flags undervalued players where three models agree.
+The model explains the log of the last Transfermarkt market value of the season for forwards (centre-forwards and wingers) in European and peripheral leagues, using performance, age, league and career variables. Players whose value sits well below what the model expects (residual below -1.5 standard deviations) are flagged as undervalued.
 
-## Status
+1. **Replication.** The Python code reproduces the Stata results of the dissertation (sample sizes, R2, flag counts, diagnostics).
+2. **Corrections.** Re-examining the pipeline showed that the season coding in the original estimation treated Brazilian and Argentine rows differently from European ones, which leaks future information into the rolling-window validation. The corrected coding keeps the lists of flagged players almost unchanged (97% of undervalued and 92% of overvalued cases kept).
+3. **Out-of-time validation.** Expanding window: train on seasons before t, predict season t, with baselines (previous value, previous value plus drift), OLS with and without a time trend, and a random forest whose hyperparameters are tuned inside each training window using player-grouped cross-validation.
 
-**Done**
-- `src/load_data.py` reads the Excel file (3,373 rows, 28 columns) and repairs text-encoding errors in player and club names.
-- `src/features.py` builds `ln_mv` (log of market value), `age_sq`, `ln_fees_cum` = `ln(1 + cumulative fees / 1,000,000)`, `Winger` (1 for left and right wingers, 0 for centre-forwards) and `player_id`. Checked on sample rows and group summaries.
+## Main results
 
-**To do**
-- Season filter
-- Season and league dummies
-- OLS with cluster-robust standard errors, and diagnostics
-- Random forest
-- Expanding-window validation
-- SQL queries on the same data
+European leagues only, test seasons 2022/23 to 2024/25 (N = 1,697 player-seasons):
+
+| Method | RMSE (log) | R2 | Median abs. % error |
+|---|---|---|---|
+| OLS + time trend | 0.667 | 0.805 | 41.8 |
+| Random forest + time trend (tuned) | 0.667 | 0.805 | 40.2 |
+| Random forest (tuned) | 0.680 | 0.797 | 39.4 |
+
+Baselines apply only to players with a value in the previous season (N = 1,053): previous value 0.636 / 0.803 / 30.0; previous value plus average drift 0.614 / 0.816 / 34.3.
+
+- Out-of-time R2 is about 0.80, close to the in-sample figure, so the valuation structure is stable across seasons.
+- A tuned random forest ties the linear model once a time trend is removed from the target. It does not improve prediction over OLS.
+- For returning players the previous value remains hard to beat; for new players plain OLS is best.
+- Market values are estimates, not transaction prices, and the median error is about 40%. The model is useful to rank and screen players, not to price a transfer.
+
+Full log of experiments and decisions: [`docs/experiments.md`](docs/experiments.md). Planned next steps: [`docs/ideas.md`](docs/ideas.md).
+
+## Repository structure
+
+`src/`
+- **Data and features:** `load_data.py`, `features.py`, `filters.py`, `formulas.py` (model formulas shared by all scripts).
+- **Data checks:** `check_features.py`, `check_filters.py`, `check_seasons.py`, `check_duplicates.py`.
+- **Models:** `model_ols_base.py`, `model_ols_extended.py`, `diagnostics_ols.py`.
+- **Thesis replication:** `replicate_thesis.py` (original season coding), `compare_codings.py` (original vs corrected coding), `compare_samples.py` (Base vs Extended on the same sample).
+- **Sensitivity analyses:** `threshold_sensitivity.py`, `minutes_sensitivity.py`, `screen_non_forwards.py`.
+- **Validation:** `expanding_window.py` (baselines, OLS and random forest, expanding window).
+- **Flags and inspection:** `tiers.py` (strength tiers), `inspect_player.py`.
+
+`docs/`: experiment log (`experiments.md`) and ideas (`ideas.md`). `outputs/`: generated tables (not tracked).
+
+Tag `replication-v1` marks the version that reproduces the dissertation with its original coding.
 
 ## Data
 
@@ -26,25 +50,24 @@ The data are not included. They combine FBref, FootyStats and Transfermarkt, the
 
 ## How to run
 
-Requires Python 3.14. Currently uses pandas, numpy and openpyxl (see `requirements.txt`). statsmodels and scikit-learn will be added when the models are implemented.
+Requires Python 3.15 (tested with 3.15.1). Packages are pinned in `requirements.txt`: pandas, numpy, openpyxl, statsmodels and scikit-learn.
 
-Tested on Windows (PowerShell) in a fresh clone, with the data file placed at `data/raw/Base.xlsx`:
+macOS / Linux:
+
+```
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python src/expanding_window.py
+```
+
+Windows (PowerShell):
 
 ```
 py -m venv .venv
 .venv\Scripts\activate
 python -m pip install -r requirements.txt
-python src/check_features.py
-```
-
-The last command prints the table size and the first three rows of the derived variables:
-
-```
-(3373, 47)
-       ln_mv      age_sq  ln_fees_cum  Winger  player_id
-0  13.527828  394.794823     0.000000       1          0
-1  16.454568  542.760563     1.504077       1          1
-2  15.894952  715.562500     2.332144       0          2
+python src/expanding_window.py
 ```
 
 ## Dissertation
