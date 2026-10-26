@@ -24,3 +24,6 @@ outputs/
 # macOS folder metadata
 .DS_Store
 scratch/
+
+.vscode/
+football.session.sql
