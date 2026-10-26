@@ -26,6 +26,8 @@ Baselines apply only to players with a value in the previous season (N = 1,053):
 - A tuned random forest with a time trend ties the linear model with a trend (RMSE difference 0.000, 95% player-level bootstrap interval -0.024 to 0.023). It does not improve prediction over OLS.
 - For returning players, previous value (with or without drift) is numerically better than the models, but the difference is within sampling noise; for new players plain OLS is significantly better than the random forest.
 - The bootstrap resamples players, not seasons, so it does not capture the uncertainty from having only three test seasons.
+- Out-of-time flags: the lower a player's residual, the larger the average rise in ln value the next season (coefficient -0.11 per SD, robust to a control for recent value change), but the strong and moderate tiers are too small (n = 4 and n = 14) to interpret, and flagged players leave the sample more often, largely because of the age cap.
+- Performance alone explains about 30% of out-of-time variance in market value; league and status variables account for most of the rest.
 - Market values are estimates, not transaction prices, and the median error is about 40%. The model is useful to rank and screen players, not to price a transfer.
 
 Full log of experiments and decisions: [`docs/experiments.md`](docs/experiments.md). Planned next steps: [`docs/ideas.md`](docs/ideas.md).
@@ -39,7 +41,9 @@ Full log of experiments and decisions: [`docs/experiments.md`](docs/experiments.
 - **Thesis replication:** `replicate_thesis.py` (original season coding), `compare_codings.py` (original vs corrected coding), `compare_samples.py` (Base vs Extended on the same sample).
 - **Sensitivity analyses:** `threshold_sensitivity.py`, `minutes_sensitivity.py`, `screen_non_forwards.py`.
 - **Validation:** `expanding_window.py` (baselines, OLS and random forest, expanding window), `bootstrap_rmse.py` (player-level bootstrap of RMSE differences).
-- **Flags and inspection:** `tiers.py` (strength tiers), `inspect_player.py`.
+- **Flags and inspection:** `tiers.py` (strength tiers), `inspect_player.py`, `oot_flags.py` (out-of-time flags and ex-post check), `attrition_diagnostic.py` (who leaves the sample).
+- **Interpretation:** `rf_importance.py` (permutation importance), `performance_only.py` (how much value performance explains).
+- **Comparables (in progress):** `profiles.py`, `comparables.py` (nearest neighbours by style profile within position).
 
 `docs/`: experiment log (`experiments.md`) and ideas (`ideas.md`). `outputs/`: generated tables (not tracked).
 
