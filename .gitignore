@@ -22,4 +22,5 @@ data/processed/
 outputs/
 
 # macOS folder metadata
-.DS_Storescratch/
+.DS_Store
+scratch/
