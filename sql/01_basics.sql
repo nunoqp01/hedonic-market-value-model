@@ -38,3 +38,29 @@ ORDER BY npxg_p90 DESC;
 SELECT league, COUNT(*) AS total_rows, COUNT(npxg_p90) AS non_null_npxg_p90, COUNT(*) - COUNT(npxg_p90) AS missing_npxg_p90, ROUND(((COUNT(*) - COUNT(npxg_p90)) * 100.0) / COUNT(*), 1) AS missing_percentage
 FROM player_seasons
 GROUP BY league;
+
+-- Exercise 3.1: Who are the leagues with more than 300 lines in the player_seasons table? (Show the league and number of lines in order)
+SELECT league, COUNT(*) AS num_player_seasons
+FROM player_seasons
+GROUP BY league
+HAVING COUNT(*) > 300
+ORDER BY num_player_seasons DESC;
+
+-- Exercise 3.2: In 2024/25, which are the clubes with at least 3 players with more than 1.500 minutes?
+SELECT club, league, COUNT(*) AS num_players
+FROM player_seasons
+WHERE season_clean = '2024/2025' AND minutes > 1500
+GROUP BY club
+HAVING COUNT(*) >= 3
+ORDER BY num_players DESC;
+
+-- Exercise 3.3: Classify each league as "Big 5" or "Other", and show, for each league, the number of lines and the average tm_mv.
+SELECT 
+    CASE 
+        WHEN league IN ('Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1') THEN 'Big 5'
+        ELSE 'Other'
+    END AS league_classification,
+    COUNT(*) AS num_player_seasons,
+    ROUND(AVG(tm_mv) / 1000000, 2) AS avg_tm_mv
+    FROM player_seasons
+    GROUP BY league_classification;
